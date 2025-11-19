@@ -1,0 +1,136 @@
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:8.2.1
+    container_name: killcode-mongodb
+    restart: unless-stopped
+    command: ["--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "${MONGODB_PORT}:27017"
+    volumes:
+      - mongodb_data:/data/db
+      - ./scripts/mongo-init.sh:/docker-entrypoint-initdb.d/mongo-init.sh:ro
+    networks:
+      - killcode-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Progress Tracking
+  redis:
+    image: redis:7-alpine
+    container_name: killcode-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT}:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - killcode-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Rust Backend Server
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    container_name: killcode-server
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "${SERVER_PORT_EXTERNAL}:8080"
+    env_file:
+      - .env
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      weaver:
+        condition: service_healthy
+    networks:
+      - killcode-network
+    volumes:
+      - ./server:/app
+      - ./killer/builds:/app/overload_bins:ro
+      - ./server/geoip/data:/server/geoip/data:ro
+      - cargo_cache:/usr/local/cargo/registry
+      - target_cache:/app/target
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Binary Weaving Service
+  weaver:
+    platform: linux/amd64
+    build:
+      context: ./weaver
+      dockerfile: Dockerfile.dev
+    container_name: killcode-weaver
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "${WEAVER_PORT_EXTERNAL}:8080"
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - killcode-network
+    volumes:
+      - ./weaver:/app
+      - bin_utils_cargo_cache:/usr/local/cargo/registry
+      - bin_utils_target_cache:/app/target
+      - weaver_temp:/tmp/weaver  # Persistent temp directory for merged binaries
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Next.js UI
+  ui:
+    build:
+      context: ./ui
+      dockerfile: Dockerfile.dev
+    container_name: killcode-ui
+    restart: unless-stopped
+    working_dir: /app
+    ports:
+      - "${UI_PORT}:5173"
+    env_file:
+      - .env
+    depends_on:
+      server:
+        condition: service_healthy
+    networks:
+      - killcode-network
+    volumes:
+      - ./ui:/app
+      - ./ui/node_modules:/app/node_modules
+      - /app/.next
+
+networks:
+  killcode-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  redis_data:
+  cargo_cache:
+  target_cache:
+  bin_utils_cargo_cache:
+  bin_utils_target_cache:
+  node_modules_cache:
+  ui_node_modules:
+  weaver_temp:

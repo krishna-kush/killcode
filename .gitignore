@@ -1,0 +1,23 @@
+# Environment variables
+.env
+.env.production
+
+/secrets
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# In Test / Personal
+/.dyninst
+/bin-to-test
+
+# Etc
+todo.md

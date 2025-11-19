@@ -1,0 +1,12 @@
+[submodule "ui"]
+	path = ui
+	url = https://github.com/krishna-kush/kc-ui.git
+[submodule "killer"]
+	path = killer
+	url = https://github.com/krishna-kush/kc-killer.git
+[submodule "weaver"]
+	path = weaver
+	url = https://github.com/krishna-kush/weaver.git
+[submodule "server"]
+	path = server
+	url = https://github.com/krishna-kush/kc-server.git
