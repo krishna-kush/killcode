@@ -102,6 +102,8 @@ services:
         condition: service_healthy
       weaver:
         condition: service_healthy
+      mailer:
+        condition: service_healthy
     networks:
       - killcode-network
     volumes:
@@ -142,6 +144,30 @@ services:
       - weaver_temp:/tmp/weaver
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Mail Queue Service (internal only)
+  mailer:
+    build:
+      context: ./mailer
+      dockerfile: Dockerfile.prod
+      args:
+        BUILDKIT_INLINE_CACHE: 1
+    image: killcode-mailer:latest
+    container_name: killcode-mailer-prod
+    restart: always
+    env_file:
+      - .env.production
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - killcode-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 10s
       timeout: 5s
       retries: 5

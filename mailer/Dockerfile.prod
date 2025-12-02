@@ -1,0 +1,83 @@
+# Production Dockerfile for Killcode Mailer Service
+# Multi-stage build for optimized final image
+
+# Stage 1: Build dependencies
+FROM rust:1.91-slim AS dependencies
+
+WORKDIR /app
+
+# Install build dependencies
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
+    apt-get update && \
+    apt-get install -y \
+    pkg-config \
+    libssl-dev
+
+# Copy only dependency manifests
+COPY Cargo.toml Cargo.lock ./
+
+# Build dependencies (cached layer)
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/app/target \
+    mkdir -p src && \
+    echo "pub fn dummy() {}" > src/lib.rs && \
+    echo "fn main() {}" > src/main.rs && \
+    cargo build --release && \
+    rm -rf src
+
+# Stage 2: Build application
+FROM dependencies AS builder
+
+# Copy source code
+COPY . .
+
+# Build release binary
+# Do not mount the /app/target as cache here to ensure fresh build
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo build --release --bin mailer && \
+    cp target/release/mailer /app/mailer && \
+    chmod +x /app/mailer
+
+# Stage 3: Runtime image
+FROM debian:trixie-slim
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' > /etc/apt/apt.conf.d/keep-cache && \
+    apt-get update && \
+    apt-get install -y \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create non-root user
+RUN useradd -r -u 1001 -g root mailer
+
+# Copy the built binary
+COPY --from=builder /app/mailer /app/mailer
+
+# Copy email templates
+COPY --from=builder /app/src/templates /app/templates
+
+# Set ownership
+RUN chown -R mailer:root /app
+
+USER mailer
+
+# Expose internal port
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=10s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://localhost:8000/health || exit 1
+
+CMD ["./mailer"]

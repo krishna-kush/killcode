@@ -1,0 +1,33 @@
+[package]
+name = "mailer"
+version = "0.0.0"
+edition = "2024"
+authors = ["Krishna Kushwaha"]
+description = "Email queue service for KillCode"
+
+[lib]
+name = "mailer"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mailer"
+path = "src/main.rs"
+
+[dependencies]
+actix-web = "4.12"
+tokio = { version = "1.48", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+uuid = { version = "1.19", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+log = "0.4"
+env_logger = "0.11"
+anyhow = "1.0"
+thiserror = "2.0"
+lettre = { version = "0.11", features = ["tokio1", "tokio1-native-tls", "builder", "smtp-transport"] }
+redis = { version = "0.32", features = ["tokio-comp", "connection-manager"] }
+handlebars = "6"
+rand = "0.9"
+
+[dev-dependencies]
+actix-rt = "2.11"

@@ -22,6 +22,7 @@ Thumbs.db
 # In Test / Personal
 /.dyninst
 /bin-to-test
+/intro
 
 # Etc
 todo.md

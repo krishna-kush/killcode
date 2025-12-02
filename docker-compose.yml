@@ -53,6 +53,8 @@ services:
         condition: service_healthy
       weaver:
         condition: service_healthy
+      mailer:
+        condition: service_healthy
     networks:
       - killcode-network
     volumes:
@@ -101,6 +103,32 @@ services:
       retries: 5
       start_period: 10s
 
+  # Mail Queue Service (internal only)
+  mailer:
+    build:
+      context: ./mailer
+      dockerfile: Dockerfile.dev
+    container_name: killcode-mailer
+    restart: unless-stopped
+    working_dir: /app
+    env_file:
+      - .env
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - killcode-network
+    volumes:
+      - ./mailer:/app
+      - mailer_cargo_cache:/usr/local/cargo/registry
+      - mailer_target_cache:/app/target
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 120s
+
   # Next.js UI
   ui:
     build:
@@ -137,3 +165,5 @@ volumes:
   node_modules_cache:
   ui_node_modules:
   weaver_temp:
+  mailer_cargo_cache:
+  mailer_target_cache:
