@@ -74,6 +74,9 @@ services:
     build:
       context: ./weaver
       dockerfile: Dockerfile.dev
+      additional_contexts:
+        osxcross: ./osxcross/target
+        llvm-mingw: ./llvm-mingw/llvm-mingw-ucrt
     container_name: killcode-weaver
     restart: unless-stopped
     working_dir: /app

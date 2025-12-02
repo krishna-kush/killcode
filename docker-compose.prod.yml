@@ -121,6 +121,9 @@ services:
     build:
       context: ./weaver
       dockerfile: Dockerfile.prod
+      additional_contexts:
+        osxcross: ./osxcross/target
+        llvm-mingw: ./llvm-mingw/llvm-mingw-ucrt
       args:
         BUILDKIT_INLINE_CACHE: 1
     image: killcode-weaver:latest
