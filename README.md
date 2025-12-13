@@ -1,6 +1,6 @@
 # Killcode
 
-**Binary Licensing & Protection Platform**
+**File Licensing & Protection Platform**
 
 Protect your software with hardware-locked licenses, continuous verification, and self-destruct capabilities.
 
@@ -8,7 +8,7 @@ Protect your software with hardware-locked licenses, continuous verification, an
 
 ## What is Killcode?
 
-Killcode is a comprehensive binary licensing and protection system that allows software vendors to distribute executables with built-in license enforcement. Upload your binary, create a license with custom policies, and deliver a protected version that automatically verifies authorization before and during execution. Revoke licenses at anytime. 🔒
+Killcode is a comprehensive file licensing and protection system (currently only binary protection is completed). It allows software vendors to distribute executables with built-in license enforcement. Upload your binary, create a license with custom policies, and deliver a protected version that automatically verifies authorization before and during execution. Revoke licenses at anytime. 🔒
 
 ### The Problem We Solve
 
