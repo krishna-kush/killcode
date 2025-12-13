@@ -115,7 +115,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
 
   # Binary Weaving Service
   weaver:
@@ -147,7 +147,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
 
   # Mail Queue Service (internal only)
   mailer:
@@ -171,7 +171,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
 
   # Next.js UI
   ui:

@@ -1,4 +1,19 @@
 services:
+  # MongoDB Replica Set Configurator (dev)
+  # Simple helper that runs once to initiate rs0 after mongodb is healthy
+  mongodb-configurator:
+    image: mongo:8.2.1
+    container_name: killcode-mongodb-configurator-dev
+    restart: "no"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    volumes:
+      - ./scripts/init-replica-set.sh:/init-replica-set.sh:ro
+    command: ["/init-replica-set.sh"]
+    networks:
+      - killcode-network
+
   # MongoDB Database
   mongodb:
     image: mongo:8.2.1
@@ -51,6 +66,8 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+      mongodb-configurator:
+        condition: service_completed_successfully
       weaver:
         condition: service_healthy
       mailer:
@@ -68,7 +85,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
 
   # Binary Weaving Service
   weaver:
@@ -101,7 +118,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 120s
 
   # Mail Queue Service (internal only)
   mailer:
